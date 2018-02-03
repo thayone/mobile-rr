@@ -1109,17 +1109,6 @@ void onRequest ( AsyncWebServerRequest *request )
         dbg_printf ("[REDIRECT] %s -> http://10.10.10.1/index.htm", path.c_str());
         response->addHeader ( "Location", "http://10.10.10.1/index.htm" );
         request->send ( response );
-
-        /*        AsyncWebServerResponse *response = request->beginResponse(
-                    511,
-                    "text/html",
-                    "<html><head><meta http-equiv='refresh' content='0; url=http://10.10.10.1/index.htm'></head></html>"
-                );
-                //response->addHeader("Cache-Control","no-cache");
-                //response->addHeader("Pragma","no-cache");
-                //response->addHeader ("Location", "http://10.10.10.1/index.htm" );
-                request->send(response);
-         */
     }
     else
     {
