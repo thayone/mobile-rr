@@ -155,6 +155,7 @@ _ws_client ws_client[MAX_WS_CLIENT];                                            
 
 Ticker timer;                                                                   // Setup Auto Scan Timer
 
+int clients = 0;
 int rrsession;                                                                  // Rick Roll Count Session
 int rrtotal;                                                                    // Rick Roll Count Total
 char str_vcc[8];
@@ -251,6 +252,14 @@ void redrawDisplay()
   drawNumber(0,15,rrtotal,"total");
   drawNumber(0,28,rrsession,"today");
 
+  // Draw number of heads based on the number of clients connected
+  int _clients = clients;
+  if (_clients>8) {
+    _clients = 8;
+  }
+  for (size_t i = 1; i <= _clients; i++) {
+    drawHead((i-1)*8,42);
+  }
 
   display.display();
 }
@@ -1039,6 +1048,7 @@ void wifi_handle_event_cb ( System_Event_t *evt )
             break;
 
         case EVENT_SOFTAPMODE_STACONNECTED:  // 5
+            clients = clients + 1;
             redrawDisplay();
             printf ( "station connected: %02X:%02X:%02X:%02X:%02X:%02X, AID = %d\n",
                      MAC2STR ( evt->event_info.sta_connected.mac ),
@@ -1046,6 +1056,7 @@ void wifi_handle_event_cb ( System_Event_t *evt )
             break;
 
         case EVENT_SOFTAPMODE_STADISCONNECTED:  // 6
+            clients = clients - 1;
             redrawDisplay();
             printf ( "station disconnected: %02X:%02X:%02X:%02X:%02X:%02X, AID = %d\n",
                      MAC2STR ( evt->event_info.sta_disconnected.mac ),
