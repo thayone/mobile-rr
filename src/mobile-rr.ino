@@ -1094,10 +1094,9 @@ void onRequest ( AsyncWebServerRequest *request )
     if ( ( !SPIFFS.exists ( path ) && !SPIFFS.exists ( path + ".gz" ) ) || ( request->host() != "10.10.10.1" ) )
     {
         AsyncWebServerResponse *response = request->beginResponse ( 302, "text/plain", "" );
-        // response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
-        // response->addHeader ( "Pragma", "no-cache" );
-        // response->addHeader ("Expires", "-1");
-        //response->setContentLength (CONTENT_LENGTH_UNKNOWN);
+        response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
+        response->addHeader ( "Pragma", "no-cache" );
+        response->addHeader ("Expires", "-1");
         dbg_printf ("[REDIRECT] %s -> http://10.10.10.1/index.htm", path.c_str());
         response->addHeader ( "Location", "http://10.10.10.1/index.htm" );
         request->send ( response );
@@ -1120,7 +1119,6 @@ void onRequest ( AsyncWebServerRequest *request )
         response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
         response->addHeader ( "Pragma", "no-cache" );
         response->addHeader ( "Expires", "-1" );
-//        response->setContentLength (CONTENT_LENGTH_UNKNOWN);
         sprintf ( s_tmp, "%d", ESP.getFreeHeap() );
         response->addHeader ( "ESP-Memory", s_tmp );
         request->send ( response );
