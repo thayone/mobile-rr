@@ -1,30 +1,33 @@
 # ESP8266 Mobile Rick Roll Captive Portal
+
 ### Live Chat
 [![Gitter](https://badges.gitter.im/idolpx/mobile-rr.svg)](https://gitter.im/idolpx/mobile-rr?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-The purpose of this project was to help me get familiar with programming for the ESP8266 and have a bit of fun.
+The purpose of this project was to help @idolpx get familiar with programming for the ESP8266 and have a bit of fun.
 
 [![ESP8266 Mobile-RR](https://i.ytimg.com/vi/ZpcRZoXQAzM/hqdefault.jpg)](https://www.youtube.com/watch?v=ZpcRZoXQAzM)
 
-* User connects to the device broadcasting an SSID of "FREE Highspeed WiFi" (this is configurable of course)
-* The captive portal helper on their phone/table/computer kicks in and presents them with a page showing "Terms of Service" and a button labeled "I Accept"
-* When they click the button a full screen animated GIF of Rick Astley dancing appears and an audio clip of "Never Gonna Give You Up" starts playing on loop along with a message in the bottom right letting them know they got rock rolled (Incase they don't understand what's going on)
+* User connects to the device broadcasting an SSID of "FREE Highspeed WiFi" (this is configurable of course).
+* The captive portal helper on their phone/table/computer kicks in and presents them with a page showing "Terms of Service" and a button labeled "I Accept".
+* When they click the button a full screen animated GIF of Rick Astley dancing appears and an audio clip of "Never Gonna Give You Up" starts playing on loop.
 
-On bootup, the buzzer plays a little bit of "Never Gonna Give You Up".
-To access the console, connect to the ESP8266 Access Point and browse to "http://10.10.10.1/console".
-From here you can monitor all connections and see when someone gets Rick Roll'd by the device.
-The console also allows you to enter commands to get more info about the status of the device, change the SSID, get the Rick Roll count and even beep the buzzer.
+### Forked project
 
-The "debug" setting is on by default and shows you all DNS and HTTP requests made to the device. It's kind of cool to see all the sites that the apps on your phone are trying to access. Check out the screenshots of the console for a glimpse of what it looks like. Some apps are very noisy. You can toggle the "debug" off to not see that stuff.
+This is a forked project originally made by @idolpx (https://github.com/idolpx), and you can see his project here: https://github.com/idolpx/mobile-rr.
+
+Our projects differ a little bit:
+
+- Inherited project use a piezo buzzer, I use an OLED screen (See attached pictures). The screen shows numbers of total rick rolls, current sessions rick rolls and a list of connected clients.
+- Inherited project use websockets, interactive settings pages, and a console, I removed all that.
 
 ## Parts List
-* ESP8266 Module with 4MB of flash  (I used the WeMos D1 Mini) (http://www.aliexpress.com/snapshot/7833150367.html?orderId=76398745536320)
-* Piezo buzzer (http://www.aliexpress.com/snapshot/7762649061.html?orderId=75910217556320)
-* USB battery pack with micro-usb cable to power everything
+* ESP8266 Module (WeMos D1 Mini Pro) (http://hobbycomponents.com/development-boards/864-wemos-d1-mini-pro-esp8266-development-board).
+* OLED-screen (WeMos D1 Mini OLED Shield) (http://hobbycomponents.com/shields/872-wemos-d1-mini-oled-shield).
 
-## Wiring
-Connect the '+' lead of the piezo to GPIO 4 (D2 on WeMos D1 Mini) and '-' lead to Ground.
-I chose GPIO 4 because I installed the long leads with the headers on the WeMos D1 Mini. The spacing from ground was perfect to just plug the buzzer in direct between G & D2.
+Total cost: 15.99 GBP.
+
+* (Optionally) a USB battery pack with micro-usb cable to power everything.
+* (Optionally) an external antenna for a wider range.
 
 ## Build Firmware
 I use PlatformIO to build this.  http://platformio.org/
@@ -52,7 +55,7 @@ You can add/edit the files in the "www" folder to your liking. (Files in the "ww
 I learned everything I needed to create this from these projects
 
 - PlatformIO - http://platformio.org/
--              http://docs.platformio.org/en/latest/platforms/espressif.html#uploading-files-to-file-system-spiffs
+- http://docs.platformio.org/en/latest/platforms/espressif.html#uploading-files-to-file-system-spiffs
 - ESP8266 Captive Portal - https://www.hackster.io/rayburne/esp8266-captive-portal-5798ff
 - ESP-RADIO - https://github.com/Edzelf/Esp-radio
 - ESPAsyncWebServer - https://github.com/me-no-dev/ESPAsyncWebServer
@@ -69,6 +72,6 @@ I learned everything I needed to create this from these projects
 - Exception Causes - https://github.com/esp8266/Arduino/blob/master/doc/exception_causes.md
 - WiFi Scan- https://www.linuxpinguin.de/project/wifiscanner/
 - SPIFFS - https://github.com/esp8266/Arduino/blob/master/doc/filesystem.md
--          http://blog.squix.org/2015/08/esp8266arduino-playing-around-with.html
+- http://blog.squix.org/2015/08/esp8266arduino-playing-around-with.html
 - WiFiManager - https://github.com/tzapu/WiFiManager
 - ESP-GDBStub - https://github.com/esp8266/Arduino/tree/master/libraries/GDBStub
