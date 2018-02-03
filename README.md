@@ -5,7 +5,7 @@
 
 The purpose of this project was to help @idolpx get familiar with programming for the ESP8266 and have a bit of fun.
 
-[![ESP8266 Mobile-RR](https://i.ytimg.com/vi/ZpcRZoXQAzM/hqdefault.jpg)](https://www.youtube.com/watch?v=ZpcRZoXQAzM)
+![A picture that shows one client connected](rickrollsoled.png)
 
 * User connects to the device broadcasting an SSID of "FREE Highspeed WiFi" (this is configurable of course).
 * The captive portal helper on their phone/table/computer kicks in and presents them with a page showing "Terms of Service" and a button labeled "I Accept".
