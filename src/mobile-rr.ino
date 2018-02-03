@@ -89,9 +89,6 @@ bool DEBUG                  = 1;
 bool SILENT                 = 0;
 int interval                = 30; // 30 Minutes
 
-// Maximum number of simultaneous clients connected (WebSocket)
-#define MAX_WS_CLIENT   3
-
 #define CLIENT_NONE     0
 #define CLIENT_ACTIVE   1
 
@@ -121,13 +118,6 @@ int interval                = 30; // 30 Minutes
         "[[b;cyan;]reset]        reset default settings\n" \
         "[[b;cyan;]save]         save settings to EEPROM"
 
-// Web Socket client state
-typedef struct
-{
-    uint32_t id;
-    uint8_t state;
-} _ws_client;
-
 enum class statemachine
 {
     none,
@@ -135,8 +125,7 @@ enum class statemachine
     beep_c,
     beep_rr,
     scan_wifi,
-    ap_change,
-    read_file
+    ap_change
 };
 statemachine state = statemachine::none;
 int state_int;
@@ -148,8 +137,6 @@ MDNSResponder mdns;
 
 AsyncWebServer httpd ( 80 );         // Instance of embedded webserver
 //AsyncWebServer  httpsd ( 443 );
-AsyncWebSocket ws ( "/ws" );         // access at ws://[esp ip]/ws
-_ws_client ws_client[MAX_WS_CLIENT]; // State Machine for WebSocket Client;
 
 Ticker timer;                        // Setup Auto Scan Timer
 
@@ -285,27 +272,6 @@ void dbg_printf ( const char *format, ... )
     va_end ( varArgs );                                   // End of using parameters
 
     Serial.println ( sbuf );
-
-    if ( DEBUG )
-    {
-        if ( ws.count() )
-            ws.textAll ( sbuf );
-    }
-}
-
-void printfAll ( const char *format, ... )
-{
-    if ( ws.count() )
-    {
-        static char sbuf[1400];
-        va_list varArgs;                                      // For variable number of params
-
-        va_start ( varArgs, format );                         // Prepare parameters
-        vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs ); // Format the message
-        va_end ( varArgs );                                   // End of using parameters
-
-        ws.textAll ( sbuf );
-    }
 }
 
 /** IP to String? */
@@ -433,7 +399,6 @@ void setup ( void )
 
     // Start File System
     setupSPIFFS();
-
     setupDNSServer();
 
     sprintf ( mdnsDomain, "%s.local", appid );
@@ -638,11 +603,6 @@ void setupHTTPServer()
         response->addHeader ( "Access-Control-Allow-Origin", "http://localhost" );
         request->send ( response );
     } );
-
-    // attach AsyncWebSocket
-    dbg_printf ( "Starting Websocket Console" );
-    ws.onEvent ( onEvent );
-    httpd.addHandler ( &ws );
     httpd.begin();
 }
 
@@ -665,21 +625,12 @@ void setupOTAServer()
         // Clean SPIFFS
         SPIFFS.end();
 
-        // Disable client connections
-        ws.enable ( false );
         // Let connected clients know what's going on
         dbg_printf ( "OTA Update Started" );
     } );
     ArduinoOTA.onEnd ( []()
     {
         dbg_printf ( "OTA Update Complete!\n" );
-
-        if ( ws.count() )
-        {
-            // Close connected clients
-            ws.closeAll();
-            delay ( 1000 );
-        }
     } );
     ArduinoOTA.onProgress ( [] ( unsigned int progress, unsigned int total )
     {
@@ -761,28 +712,6 @@ int scanWiFi ()
     dbg_printf ( "Channel %d is least used.", chan_selected );
 
     return chan_selected;
-}
-
-void readFile ( String file )
-{
-    File f = SPIFFS.open ( file, "r" );
-
-    if ( !f )
-    {
-        Serial.println ( "file open failed" );
-    }
-    else
-    {
-        while ( f.available() )
-        {
-            String line = f.readStringUntil ( 'n' );
-
-            if ( ws.count() )
-                ws.textAll ( line );
-        }
-
-        f.close();
-    }
 }
 
 String getSystemInformation()
@@ -1009,10 +938,6 @@ void loop ( void )
         case statemachine::ap_change:
             chan_selected = setupAP ( chan_selected );
             break;
-
-        case statemachine::read_file:
-            readFile ( state_string );
-            break;
     }
 
     state = statemachine::none;
@@ -1133,623 +1058,4 @@ void onRequest ( AsyncWebServerRequest *request )
 
     // Turn the LED off by making the voltage HIGH
     digitalWrite ( LED_BUILTIN, HIGH );
-}
-
-
-//***************************************************************************
-// WebSocket onEvent                                                        *
-//***************************************************************************
-// Manage routing of websocket events                                       *
-//***************************************************************************
-void onEvent ( AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len )
-{
-    if ( type == WS_EVT_CONNECT )
-    {
-        uint8_t index;
-        //dbg_printf ( "ws[%s][%u] connect\n", server->url(), client->id() );
-
-        for ( index = 0; index < MAX_WS_CLIENT; index++ )
-        {
-            if ( ws_client[index].id == 0 )
-            {
-                ws_client[index].id = client->id();
-                ws_client[index].state = CLIENT_ACTIVE;
-                //dbg_printf ( "added #%u at index[%d]\n", client->id(), index );
-                client->printf ( "[[b;green;]Hello Client #%u, added you at index %d]", client->id(), index );
-                client->ping();
-                break; // Exit for loop
-            }
-        }
-
-        if ( index >= MAX_WS_CLIENT )
-        {
-            //dbg_printf ( "not added, table is full" );
-            client->printf ( "[[b;red;]Sorry client #%u, Max client limit %d reached]", client->id(), MAX_WS_CLIENT );
-            client->ping();
-        }
-    }
-    else if ( type == WS_EVT_DISCONNECT )
-    {
-        //dbg_printf ( "ws[%s][%u] disconnect: %u\n", server->url(), client->id() );
-
-        for ( uint8_t i = 0; i < MAX_WS_CLIENT; i++ )
-        {
-            if ( ws_client[i].id == client->id() )
-            {
-                ws_client[i].id = 0;
-                ws_client[i].state = CLIENT_NONE;
-                //dbg_printf ( "freed[%d]\n", i );
-                break; // Exit for loop
-            }
-        }
-    }
-    else if ( type == WS_EVT_ERROR )
-    {
-        dbg_printf ( "WS[%u]: error(%u) - %s", client->id(), * ( ( uint16_t * ) arg ), ( char * ) data );
-    }
-    else if ( type == WS_EVT_PONG )
-    {
-        dbg_printf ( "WS[%u]: pong", client->id(), len );
-    }
-    else if ( type == WS_EVT_DATA )
-    {
-        //data packet
-        AwsFrameInfo *info = ( AwsFrameInfo * ) arg;
-        char *msg = NULL;
-        size_t n = info->len;
-        uint8_t index;
-
-        // Size of buffer needed
-        // String same size +1 for \0
-        // Hex size*3+1 for \0 (hex displayed as "FF AA BB ...")
-        n = info->opcode == WS_TEXT ? n + 1 : n * 3 + 1;
-        msg = ( char * ) calloc ( n, sizeof ( char ) );
-
-        if ( msg )
-        {
-            // Grab all data
-            for ( size_t i = 0; i < info->len; i++ )
-            {
-                if ( info->opcode == WS_TEXT )
-                {
-                    msg[i] = ( char ) data[i];
-                }
-                else
-                {
-                    sprintf_P ( msg + i * 3, PSTR ( "%02x " ), ( uint8_t ) data[i] );
-                }
-            }
-        }
-
-        //dbg_printf ( "ws[%s][%u] message %s\n", server->url(), client->id(), msg );
-
-        // Search if it's a known client
-        for ( index = 0; index < MAX_WS_CLIENT; index++ )
-        {
-            if ( ws_client[index].id == client->id() )
-            {
-                //dbg_printf ( "known[%d] '%s'\n", index, msg );
-                //dbg_printf ( "client #%d info state=%d\n", client->id(), ws_client[index].state );
-
-                // Received text message
-                if ( info->opcode == WS_TEXT )
-                {
-                    execCommand ( client, msg );
-                }
-                else
-                {
-                    dbg_printf ( "Binary 0x:%s", msg );
-                }
-
-                // Exit for loop
-                break;
-            } // if known client
-        } // for all clients
-
-        // Free up allocated buffer
-        if ( msg )
-            free ( msg );
-    } // EVT_DATA
-}
-
-//***************************************************************************
-// WebSocket execCommand                                                    *
-//***************************************************************************
-// translate and execute command                                            *
-//***************************************************************************
-void execCommand ( AsyncWebSocketClient *client, char *msg )
-{
-    bool CHANGED = false;
-    uint16_t l = strlen ( msg );
-    uint8_t index = MAX_WS_CLIENT;
-
-    // Search if we're known client
-    if ( client )
-    {
-        for ( index = 0; index < MAX_WS_CLIENT; index++ )
-        {
-            // Exit for loop if we are there
-            if ( ws_client[index].id == client->id() )
-                break;
-        } // for all clients
-    }
-    else
-    {
-        return;
-    }
-
-    // Custom command to talk to device
-    if ( !strncasecmp_P ( msg, PSTR ( "debug" ), 5 ) )
-    {
-        if ( l > 5 )
-        {
-            int v = atoi ( &msg[6] );
-
-            if ( v > 0 )
-            {
-                DEBUG = true;
-            }
-            else
-            {
-                DEBUG = false;
-            }
-
-            CHANGED = true;
-        }
-
-        if ( DEBUG )
-        {
-            client->printf_P ( PSTR ( "[[b;green;]DEBUG output enabled]" ) );
-        }
-        else
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]DEBUG output disabled]" ) );
-        }
-
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "silent" ), 6 ) )
-    {
-        if ( l > 6 )
-        {
-            int v = atoi ( &msg[7] );
-
-            if ( v > 0 )
-            {
-                SILENT = true;
-            }
-            else
-            {
-                SILENT = false;
-            }
-
-            CHANGED = true;
-        }
-
-        if ( SILENT )
-        {
-            client->printf_P ( PSTR ( "[[b;green;]SILENT mode enabled]" ) );
-        }
-        else
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]SILENT mode disabled]" ) );
-        }
-
-    }
-    // Dir files on SPIFFS system
-    // --------------------------
-    else if ( !strcasecmp_P ( msg, PSTR ( "ls" ) ) )
-    {
-        FSInfo fs_info;
-        uint16_t cnt = 0;
-        String filename;
-
-        client->printf_P ( PSTR ( "[[b;green;]SPIFFS Files]\r\nName                           -      Size" ) );
-        // Show files in FS
-        Dir dir = SPIFFS.openDir ( "/" );
-
-        // All files
-        while ( dir.next() )
-        {
-            cnt++;
-            File f = dir.openFile ( "r" );
-            filename = dir.fileName();
-            // Show name and size
-            client->printf_P ( PSTR ( "%-30s - %9s" ),             
-                               filename.c_str(),
-                               formatBytes ( f.size() ).c_str()
-                             );
-            f.close();
-        }
-
-        SPIFFS.info ( fs_info );
-        client->printf_P ( PSTR ( "%d Files, %s of %s Used" ),
-                           cnt,
-                           formatBytes ( fs_info.usedBytes ).c_str(),
-                           formatBytes ( fs_info.totalBytes ).c_str()
-                         );
-        client->printf_P ( PSTR ( "%s Free" ),
-                           formatBytes ( fs_info.totalBytes - fs_info.usedBytes ).c_str()
-                         );
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "cat" ), 3 ) )
-    {
-        if ( !strncasecmp_P ( msg, PSTR ( "cat " ), 4 ) )
-        {
-            if ( SPIFFS.exists ( &msg[4] ) )
-            {
-                state_string = &msg[4];
-                state = statemachine::read_file;
-            }
-            else
-            {
-                client->printf_P ( PSTR ( "[[b;red;]cat: %s: No such file or directory]" ), &msg[4] );
-            }
-
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "rm" ), 2 ) )
-    {
-        if ( !strncasecmp_P ( msg, PSTR ( "rm " ), 3 ) )
-        {
-            if ( SPIFFS.exists ( &msg[3] ) )
-            {
-                SPIFFS.remove ( &msg[3] );
-            }
-            else
-            {
-                client->printf_P ( PSTR ( "[[b;red;]rm: %s: No such file or directory]" ), &msg[3] );
-            }
-
-        }
-    }
-    else if ( !strcasecmp_P ( msg, PSTR ( "info" ) ) )
-    {
-        uint8_t mac[6];
-        WiFi.softAPmacAddress ( mac );
-        client->printf_P ( PSTR ( "[[b;green;]SYSTEM INFORMATION]" ) );
-        client->printf_P ( PSTR ( "Firmware version [[b;green;]%s %s]\n " ), __DATE__, __TIME__ );
-
-        client->printf_P ( PSTR ( "[[b;cyan;]SYSTEM]" ) );
-        client->printf_P ( PSTR ( "SDK version:  %s" ), ESP.getSdkVersion() );
-        client->printf_P ( PSTR ( "Boot Version: %08X" ), ESP.getBootVersion() );
-        client->printf_P ( PSTR ( "Boot Mode:    %08X" ), ESP.getBootMode() );
-        client->printf_P ( PSTR ( "Chip ID:      %08X" ), ESP.getChipId() );
-        client->printf_P ( PSTR ( "CPU Freq:     %d MHz" ), ESP.getCpuFreqMHz() );
-        client->printf_P ( PSTR ( "Cycle Count:  %u\n " ), ESP.getCycleCount() );
-
-        client->printf_P ( PSTR ( "[[b;cyan;]POWER]" ) );
-        client->printf_P ( PSTR ( "Voltage:      %d.%d v\n " ), ( ESP.getVcc() / 1000 ), ( ESP.getVcc() % 1000 ) );
-
-        client->printf_P ( PSTR ( "[[b;cyan;]MEMORY]" ) );
-        client->printf_P ( PSTR ( "Free Memory:  %d B" ), ESP.getFreeHeap() );
-        client->printf_P ( PSTR ( "Sketch Size:  %s" ), formatBytes ( ESP.getSketchSize() ).c_str() );
-        client->printf_P ( PSTR ( "Sketch Free:  %s" ), formatBytes ( ESP.getFreeSketchSpace() ).c_str() );
-        client->printf_P ( PSTR ( "Flash Space:  %s" ), formatBytes ( ESP.getFlashChipRealSize() ).c_str() );
-        client->printf_P ( PSTR ( "Flash Speed:  %d MHz\n " ), int ( ESP.getFlashChipSpeed() / 1000000 ) );
-
-        client->printf_P ( PSTR ( "[[b;cyan;]NETWORK]" ) );
-        client->printf_P ( PSTR ( "SoftAP SSID: %s" ), ssid );
-        client->printf_P ( PSTR ( "SoftAP  MAC: %02X:%02X:%02X:%02X:%02X:%02X\nSoftAP   IP: %s\n " ),
-                           MAC2STR ( mac ),
-                           ipToString ( ip ).c_str()
-                         );
-
-        client_status ( client );
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "beep" ), 4 ) )
-    {
-        if ( strstr ( msg, "rr" ) )
-        {
-            client->printf_P ( PSTR ( "[[b;green;]NEVER GONNA GIVE YOU UP!]" ) );
-            state = statemachine::beep_rr;
-        }
-        else
-        {
-            if ( strstr ( msg, "c" ) )
-            {
-                int v = atoi ( &msg[6] );
-
-                if ( v == 0 ) v = 50;
-
-                client->printf_P ( PSTR ( "[[b;yellow;]CHIRP!] %dms" ), v );
-                state_int = v;
-                state = statemachine::beep_c;
-            }
-            else
-            {
-                int v = atoi ( &msg[5] );
-
-                if ( v == 0 ) v = 50;
-
-                client->printf_P ( PSTR ( "[[b;yellow;]BEEP!] %dms" ), v );
-                state_int = v;
-                state = statemachine::beep;
-            }
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "user" ), 4 ) )
-    {
-        if ( !strncasecmp_P ( msg, PSTR ( "user " ), 5 ) )
-        {
-            sprintf ( username, "%s", &msg[5] );
-            client->printf_P ( PSTR ( "[[b;yellow;]Changing Username:] %s" ), username );
-            CHANGED = true;
-        }
-        else
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]Username:] %s" ), username );
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "pass" ), 4 ) )
-    {
-        if ( !strncasecmp_P ( msg, PSTR ( "pass " ), 5 ) )
-        {
-            sprintf ( password, "%s", &msg[5] );
-            client->printf_P ( PSTR ( "[[b;yellow;]Changing Password:] %s" ), password );
-            CHANGED = true;
-        }
-        else
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]Password:] %s" ), password );
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "ssid" ), 4 ) )
-    {
-        if ( l == 4 )
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]SSID:] %s" ), ssid );
-        }
-        else
-        {
-            sprintf ( ssid, "%s", &msg[5] );
-            client->printf_P ( PSTR ( "[[b;yellow;]Changing WiFi SSID:] %s" ), ssid );
-
-            if ( !SILENT )
-            {
-                state_int = 500;
-                state = statemachine::beep;
-            }
-
-            eepromSave();
-            state = statemachine::ap_change;
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "chan" ), 4 ) )
-    {
-        if ( l == 4 )
-        {
-            if ( channel == 0 )
-            {
-                client->printf_P ( PSTR ( "[[b;yellow;]Channel:] AUTO (%d)" ), WiFi.channel() );
-            }
-            else
-            {
-                client->printf_P ( PSTR ( "[[b;yellow;]Channel:] %d" ), WiFi.channel() );
-            }
-        }
-        else
-        {
-            int v = atoi ( &msg[5] );
-
-            if ( v > 0 && v < 12 )
-            {
-                client->printf_P ( PSTR ( "[[b;yellow;]Changing WiFi Channel:] %d" ), v );
-            }
-            else
-            {
-                v = 0;
-                client->printf_P ( PSTR ( "[[b;yellow;]Changing WiFi Channel:] AUTO" ) );
-            }
-
-            if ( !SILENT )
-            {
-                state_int = 500;
-                state = statemachine::beep;
-            }
-
-            channel = v;
-            chan_selected = v;
-            state = statemachine::ap_change;
-
-            CHANGED = true;
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "scan" ), 4 ) )
-    {
-        client->printf_P ( PSTR ( "[[b;yellow;]WiFi scan initiated!]" ) );
-        state = statemachine::scan_wifi;
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "int" ), 3 ) )
-    {
-        if ( l > 3 )
-        {
-            int v = atoi ( &msg[4] );
-
-            if ( v < 1 )
-            {
-                v = 0;
-                timer.detach();
-            }
-            else
-            {
-                v = v;
-                timer.detach();
-                timer.attach_ms ( 1000 * 60 * v, onTimer );
-                client->printf_P ( PSTR ( "[[b;yellow;]Auto Scan:] ENABLED" ) );
-            }
-
-            if ( !SILENT )
-            {
-                state_int = 500;
-                state = statemachine::beep;
-            }
-
-            interval = v;
-
-            CHANGED = true;
-        }
-
-        if ( interval == 0 )
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]Auto Scan:] DISABLED" ) );
-        }
-        else
-        {
-            client->printf_P ( PSTR ( "[[b;yellow;]Auto Scan Interval:] %d min(s)" ), interval );
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "save" ), 4 ) )
-    {
-        client->printf_P ( PSTR ( "[[b;green;]Saving Settings to EEPROM]" ) );
-
-        if ( !SILENT )
-        {
-            state_int = 500;
-            state = statemachine::beep;
-        }
-
-        eepromSave();
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "msg" ), 3 ) )
-    {
-        File f;
-
-        // Open "message.htm" file stream from SPIFFS
-        if ( SPIFFS.exists ( "/message.htm" ) )
-        {
-            //Serial.println ( "File opened r+" );
-            f = SPIFFS.open ( "/message.htm", "r+" );
-        }
-        else
-        {
-            //Serial.println ( "File opened w+" );
-            f = SPIFFS.open ( "/message.htm", "w+" );
-        }
-
-        if ( !f )
-        {
-            client->printf_P ( PSTR ( "[[b;red;]File open failed:] /message.htm" ) );
-        }
-        else
-        {
-            if ( l == 3 )
-            {
-                client->printf_P ( PSTR ( "[[b;yellow;]Reading:] /message.htm" ) );
-                state_string = "/message.htm";
-                state = statemachine::read_file;
-            }
-            else
-            {
-                Serial.printf ( "Writing File: [%s]", &msg[4] );
-                client->printf_P ( PSTR ( "[[b;yellow;]Changing Message:] %s" ), &msg[4] );
-
-                if ( !SILENT )
-                {
-                    state_int = 500;
-                    state = statemachine::beep;
-                }
-
-                // Write Message to "message.htm" in SPIFFS
-                f.print ( &msg[4] );
-            }
-
-            f.close();
-        }
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "count" ), 5 ) )
-    {
-        if ( l > 5 )
-        {
-            int v = atoi ( &msg[6] );
-
-            if ( v >= 0 )
-            {
-                rrsession = v;
-                rrtotal = v;
-
-                if ( !SILENT )
-                {
-                    state_int = 500;
-                    state = statemachine::beep;
-                }
-
-                eepromSave();
-            }
-        }
-
-        client->printf_P ( PSTR ( "[[b;yellow;]Rick Roll Count]: %d Session, %d Total" ), rrsession, rrtotal );
-    }
-    else if ( !strncasecmp_P ( msg, PSTR ( "json" ), 4 ) )
-    {
-        if ( l > 4 )
-        {
-            String json;
-
-            if ( !strncasecmp_P ( &msg[5], PSTR ( "e" ), 1 ) )
-            {
-                // EEPROM
-                json = getEEPROM();
-            }
-            else if ( !strncasecmp_P ( &msg[5], PSTR ( "s" ), 1 ) )
-            {
-                // Settings
-                json = getApplicationSettings();
-            }
-            else if ( !strncasecmp_P ( &msg[5], PSTR ( "i" ), 1 ) )
-            {
-                // information
-                json = getSystemInformation();
-            }
-
-            client->printf_P ( json.c_str() );
-        }
-    }
-    else if ( !strcasecmp_P ( msg, PSTR ( "reset" ) ) )
-    {
-        client->printf_P ( PSTR ( "Resetting EEPROM to defaults" ) );
-        eepromInitialize();
-        ESP.restart();
-    }
-    else if ( ( *msg == '?' || !strcasecmp_P ( msg, PSTR ( "help" ) ) ) )
-    {
-        client->printf_P ( PSTR ( HELP_TEXT ) );
-    }
-    else if ( !strcasecmp_P ( msg, PSTR ( "reboot" ) ) )
-    {
-        ws.closeAll();
-        delay ( 1000 );
-        ESP.restart();
-    }
-
-    if ( CHANGED )
-    {
-        client->printf_P ( PSTR ( "[[b;yellow;]*** NOTE: Changes are not written to EEPROM until you enter 'save']" ) );
-    }
-
-    dbg_printf ( "WS[%d]: %s", client->id(), msg );
-}
-
-void client_status ( AsyncWebSocketClient *client )
-{
-    struct station_info *station = wifi_softap_get_station_info();
-    uint8_t client_count = wifi_softap_get_station_num();
-    struct ip_addr *ip;
-    client->printf_P ( PSTR ( "[[b;yellow;]Connected Client(s)]: %d" ),
-                       client_count
-                     );
-    int i = 0;
-
-    while ( station != NULL )
-    {
-        ip = &station->ip;
-        client->printf_P ( PSTR ( "%d: MAC: %02X:%02X:%02X:%02X:%02X:%02X\n    IP: %s" ),
-                           i,
-                           MAC2STR ( station->bssid ),
-                           ipToString ( ip->addr ).c_str()
-                         );
-        i++;
-        station = STAILQ_NEXT ( station, next );
-    }
-
-    wifi_softap_free_station_info();
 }
