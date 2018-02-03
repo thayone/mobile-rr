@@ -3,7 +3,7 @@
 ### Live Chat
 [![Gitter](https://badges.gitter.im/idolpx/mobile-rr.svg)](https://gitter.im/idolpx/mobile-rr?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-The purpose of this project was to help @idolpx get familiar with programming for the ESP8266 and have a bit of fun.
+The purpose of this project was for the author @idolpx to get familiar with programming for the ESP8266 chip and have a bit of fun.
 
 ![A picture that shows one client connected](rickrollsoled.png)
 
