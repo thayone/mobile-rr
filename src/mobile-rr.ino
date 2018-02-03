@@ -391,7 +391,8 @@ void setup ( void )
     system_set_os_print ( 1 );
 //  system_update_cpu_freq ( 160 );                                             // Set CPU to 80/160 MHz
 
-    Serial.begin ( 921600 );                                                // For debug
+    //Serial.begin ( 921600 );                                                // For debug
+    Serial.begin ( 9600 );
     Serial.println();
 
     pinMode ( LED_BUILTIN, OUTPUT );                                        // initialize onboard LED as output
