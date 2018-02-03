@@ -932,7 +932,7 @@ void onRequest ( AsyncWebServerRequest *request )
         AsyncWebServerResponse *response = request->beginResponse ( 302, "text/plain", "" );
         response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
         response->addHeader ( "Pragma", "no-cache" );
-        response->addHeader ("Expires", "-1");
+        response->addHeader ( "Expires", "-1" );
         dbg_printf ("[REDIRECT] %s -> http://10.10.10.1/index.htm", path.c_str());
         response->addHeader ( "Location", "http://10.10.10.1/index.htm" );
         request->send ( response );
