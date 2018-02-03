@@ -95,9 +95,6 @@ int interval                = 30; // 30 Minutes
 enum class statemachine
 {
     none,
-    beep,
-    beep_c,
-    beep_rr,
     scan_wifi,
     ap_change
 };
@@ -283,26 +280,6 @@ String formatBytes ( size_t bytes )
     {
         return String ( bytes / 1024.0 / 1024.0 / 1024.0 ) + " GB";
     }
-}
-
-//***************************************************************************
-//                    P I E Z O   B E E P                                   *
-//***************************************************************************
-void beep ( int delayms )
-{
-    delay ( delayms );
-}
-
-void beepC ( int delayms )
-{
-  delay ( delayms );
-}
-
-void beep_rr ()
-{
-  digitalWrite ( LED_BUILTIN, LOW );
-  delay (100);
-  digitalWrite ( LED_BUILTIN, HIGH );
 }
 
 //***************************************************************************
@@ -858,18 +835,6 @@ void loop ( void )
 
     switch ( state )
     {
-        case statemachine::beep:
-            beep ( state_int );
-            break;
-
-        case statemachine::beep_c:
-            beepC ( state_int );
-            break;
-
-        case statemachine::beep_rr:
-            beep_rr();
-            break;
-
         case statemachine::scan_wifi:
             scanWiFi();
             break;
