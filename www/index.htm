@@ -150,45 +150,6 @@
         function show() {
             b.style.display = "block";
             d.style.display = "none";
-            message();
-        }
-
-        var msg = document.getElementById("msg");
-        msg.addEventListener("click", function() {
-            this.style.display = "none";
-            info();
-        }, false);
-
-        function message()
-        {
-            var xmlHttp = new XMLHttpRequest();
-
-            xmlHttp.onreadystatechange = function() {
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                {
-                    console.log('Message: ' + xmlHttp.responseText);
-                    document.getElementById("msg").innerHTML = xmlHttp.responseText;
-                }
-            };
-            xmlHttp.open("GET", "/message.htm", true); // true for asynchronous
-            xmlHttp.send(null);
-        }
-
-        function info()
-        {
-            var xmlHttp = new XMLHttpRequest();
-
-            xmlHttp.onreadystatechange = function() {
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                {
-                    console.log('Message: ' + xmlHttp.responseText);
-                    var i = document.getElementById("info");
-                    i.innerHTML = xmlHttp.responseText;
-                    i.style.display = "block";
-                }
-            };
-            xmlHttp.open("GET", "/info.htm", true); // true for asynchronous
-            xmlHttp.send(null);
         }
 
         function trigger()
