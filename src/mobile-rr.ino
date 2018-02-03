@@ -1093,13 +1093,20 @@ void onRequest ( AsyncWebServerRequest *request )
 
     String path = request->url();
 
-    if ( ( !SPIFFS.exists ( path ) && !SPIFFS.exists ( path + ".gz" ) ) ||  ( request->host() != "10.10.10.1" ) )
+    // dbg_printf ("Path:      %s", path.c_str());
+    // dbg_printf ("Host:      %s", request->host().c_str());
+    // dbg_printf ("File?:     %d", !SPIFFS.exists(path));
+    // dbg_printf ("File(gz)?: %d", !SPIFFS.exists(path + ".gz"));
+    // dbg_printf ("Host?:     %d", (request->host() != "10.10.10.1"));
+
+    if ( ( !SPIFFS.exists ( path ) && !SPIFFS.exists ( path + ".gz" ) ) || ( request->host() != "10.10.10.1" ) )
     {
         AsyncWebServerResponse *response = request->beginResponse ( 302, "text/plain", "" );
-//        response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
-//        response->addHeader ( "Pragma", "no-cache" );
-//        response->addHeader ("Expires", "-1");
-//        response->setContentLength (CONTENT_LENGTH_UNKNOWN);
+        // response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
+        // response->addHeader ( "Pragma", "no-cache" );
+        // response->addHeader ("Expires", "-1");
+        //response->setContentLength (CONTENT_LENGTH_UNKNOWN);
+        dbg_printf ("[REDIRECT] %s -> http://10.10.10.1/index.htm", path.c_str());
         response->addHeader ( "Location", "http://10.10.10.1/index.htm" );
         request->send ( response );
 
