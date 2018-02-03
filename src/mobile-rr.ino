@@ -92,32 +92,6 @@ int interval                = 30; // 30 Minutes
 #define CLIENT_NONE     0
 #define CLIENT_ACTIVE   1
 
-
-#define HELP_TEXT "[[b;green;]ESP8266 Mobile Rick Roll]\n" \
-        "------------------------\n" \
-        "[[b;cyan;]?] or [[b;cyan;]help]    show this help\n\n" \
-        "[[b;cyan;]debug {0/1}]  show/set debug output\n" \
-        "[[b;cyan;]silent {0/1}] show/set silent mode\n" \
-        "[[b;cyan;]ssid 's']     show/set SSID to 's'\n" \
-        "[[b;cyan;]chan {0-11}]  show/set channel (0=auto)\n" \
-        "[[b;cyan;]int {n}]      show/set auto scan interval\n" \
-        "               where 'n' is mins (0=off)\n" \
-        "[[b;cyan;]msg 's']      show/set message to 's'\n" \
-        "[[b;cyan;]user 's']     show/set username to 's'\n" \
-        "[[b;cyan;]pass 's']     show/set password to 's'\n\n" \
-        "[[b;cyan;]beep {n/rr}]  sound piezo for 'n' ms\n" \
-        "[[b;cyan;]count]        show Rick Roll count\n" \
-        "[[b;cyan;]info]         show system information\n" \
-        "[[b;cyan;]json {e/s/i}] show EEPROM, App Settings,\n" \
-        "               or System Information\n\n" \
-        "[[b;cyan;]ls]           list SPIFFS files\n" \
-        "[[b;cyan;]cat 's']      read SPIFFS file 's'\n" \
-        "[[b;cyan;]rm 's']       remove SPIFFS file 's'\n\n" \
-        "[[b;cyan;]scan]         scan WiFi networks in area\n\n" \
-        "[[b;cyan;]reboot]       reboot system\n" \
-        "[[b;cyan;]reset]        reset default settings\n" \
-        "[[b;cyan;]save]         save settings to EEPROM"
-
 enum class statemachine
 {
     none,
