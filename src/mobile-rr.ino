@@ -520,31 +520,16 @@ void setupHTTPServer()
     httpd.on ( "/fwlink", onRequest ); //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.on ( "/hotspot-detect.html", onRequest ); //Apple captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.onNotFound ( onRequest );
-    
+
     httpd.on ( "/trigger", HTTP_GET, [] ( AsyncWebServerRequest * request )
     {
         rrsession++;
         rrtotal++;
         String remoteIP = ipToString ( request->client()->remoteIP() );
-        printfAll ( "[[b;yellow;]Rick Roll Sent!] (%d): [%s] %s" ,
-                       rrsession,
-                       remoteIP.c_str(),
-                       request->header ( "User-Agent" ).c_str()
-                     );
-        Serial.printf ( "Rick Roll Sent! (%d): [%s] %s\n",
-                        rrsession,
-                        remoteIP.c_str(),
-                        request->header ( "User-Agent" ).c_str()
-                      );
+
         request->send ( 200, "text/html", String ( rrsession ) );
         eepromSave();
         redrawDisplay();
-
-        if ( !SILENT )
-        {
-            state_int = 200;
-            state = statemachine::beep_c;
-        }
 
         // Disconnect that station
         //wifi_softap_dhcps_client_leave(NULL, remoteIP, true);
@@ -557,12 +542,6 @@ void setupHTTPServer()
         request->send ( response );
     } );
 
-    httpd.on ( "/settings", HTTP_GET, [] ( AsyncWebServerRequest * request )
-    {
-        AsyncWebServerResponse *response = request->beginResponse ( 200, "text/html", getApplicationSettings() );
-        response->addHeader ( "Access-Control-Allow-Origin", "http://localhost" );
-        request->send ( response );
-    } );
     httpd.begin();
 }
 
