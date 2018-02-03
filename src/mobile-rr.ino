@@ -546,21 +546,7 @@ void setupHTTPServer()
     httpd.on ( "/fwlink", onRequest ); //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.on ( "/hotspot-detect.html", onRequest ); //Apple captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.onNotFound ( onRequest );
-
-    // HTTP basic authentication
-    httpd.on ( "/console", HTTP_GET, [] ( AsyncWebServerRequest * request )
-    {
-        request->redirect ( "http://10.10.10.1/console.htm" );
-    } );
-    httpd.on ( "/console.htm", HTTP_GET, [] ( AsyncWebServerRequest * request )
-    {
-        if ( strlen ( username ) > 0 && strlen ( password ) > 0 )
-            if ( !request->authenticate ( username, password ) )
-                return request->requestAuthentication();
-
-        request->send ( SPIFFS, "/console.htm" );
-    } );
-
+    
     httpd.on ( "/trigger", HTTP_GET, [] ( AsyncWebServerRequest * request )
     {
         rrsession++;
