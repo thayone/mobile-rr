@@ -629,16 +629,6 @@ void setupHTTPServer()
             state = statemachine::beep_c;
         }
 
-/*        //List all collected headers
-        int headers = request->headers();
-        int i;
-
-        for ( i = 0; i < headers; i++ )
-        {
-            AsyncWebHeader *h = request->getHeader ( i );
-            Serial.printf ( "HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str() );
-        }
-*/
         // Disconnect that station
         //wifi_softap_dhcps_client_leave(NULL, remoteIP, true);
     } );
