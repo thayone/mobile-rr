@@ -596,6 +596,7 @@ void setupHTTPServer()
     // Handle requests
     httpd.on ( "/generate_204", onRequest );  //Android captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.on ( "/fwlink", onRequest );  //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+    httpd.on ( "/hotspot-detect.html", onRequest ); // Apple captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.onNotFound ( onRequest );
 
     // HTTP basic authentication
