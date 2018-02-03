@@ -53,12 +53,12 @@
 extern "C"
 {
 #include "user_interface.h"
-
     void system_set_os_print ( uint8 onoff );
     void ets_install_putc1 ( void *routine );
 }
 
-ADC_MODE ( ADC_VCC );                                                           // Set ADC for Voltage Monitoring
+// Set ADC for Voltage Monitoring
+ADC_MODE ( ADC_VCC );
 
 #define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
@@ -67,10 +67,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 static void _u0_putc ( char c )
 {
     while ( ( ( U0S >> USTXC ) & 0x7F ) == 0x7F ) ;
-
     U0F = c;
 }
-
 
 //
 //******************************************************************************************
@@ -89,7 +87,7 @@ char username[]             = "admin";
 char password[]             = "";
 bool DEBUG                  = 1;
 bool SILENT                 = 0;
-int interval                = 30;                                               // 30 Minutes
+int interval                = 30; // 30 Minutes
 
 // Maximum number of simultaneous clients connected (WebSocket)
 #define MAX_WS_CLIENT   3
@@ -144,20 +142,20 @@ statemachine state = statemachine::none;
 int state_int;
 String state_string;
 
-IPAddress ip ( 10, 10, 10, 1 );                                                 // Private network for httpd
-DNSServer dnsd;                                                                 // Create the DNS object
+IPAddress ip ( 10, 10, 10, 1 );      // Private network for httpd
+DNSServer dnsd;                      // Create the DNS object
 MDNSResponder mdns;
 
-AsyncWebServer httpd ( 80 );                                                    // Instance of embedded webserver
+AsyncWebServer httpd ( 80 );         // Instance of embedded webserver
 //AsyncWebServer  httpsd ( 443 );
-AsyncWebSocket ws ( "/ws" );                                                    // access at ws://[esp ip]/ws
-_ws_client ws_client[MAX_WS_CLIENT];                                            // State Machine for WebSocket Client;
+AsyncWebSocket ws ( "/ws" );         // access at ws://[esp ip]/ws
+_ws_client ws_client[MAX_WS_CLIENT]; // State Machine for WebSocket Client;
 
-Ticker timer;                                                                   // Setup Auto Scan Timer
+Ticker timer;                        // Setup Auto Scan Timer
 
 int clients = 0;
-int rrsession;                                                                  // Rick Roll Count Session
-int rrtotal;                                                                    // Rick Roll Count Total
+int rrsession;                       // Rick Roll Count Session
+int rrtotal;                         // Rick Roll Count Total
 char str_vcc[8];
 int chan_selected;
 
@@ -279,16 +277,16 @@ void setupDisplay()
 //***************************************************************************
 void dbg_printf ( const char *format, ... )
 {
-    static char sbuf[1400];                                                 // For debug lines
-    va_list varArgs;                                                        // For variable number of params
+    static char sbuf[1400];                               // For debug lines
+    va_list varArgs;                                      // For variable number of params
 
-    va_start ( varArgs, format );                                           // Prepare parameters
-    vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs );                   // Format the message
-    va_end ( varArgs );                                                     // End of using parameters
+    va_start ( varArgs, format );                         // Prepare parameters
+    vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs ); // Format the message
+    va_end ( varArgs );                                   // End of using parameters
 
     Serial.println ( sbuf );
 
-    if ( DEBUG )                                                            // DEBUG on?
+    if ( DEBUG )
     {
         if ( ws.count() )
             ws.textAll ( sbuf );
@@ -300,11 +298,11 @@ void printfAll ( const char *format, ... )
     if ( ws.count() )
     {
         static char sbuf[1400];
-        va_list varArgs;                                                        // For variable number of params
+        va_list varArgs;                                      // For variable number of params
 
-        va_start ( varArgs, format );                                           // Prepare parameters
-        vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs );                   // Format the message
-        va_end ( varArgs );                                                     // End of using parameters
+        va_start ( varArgs, format );                         // Prepare parameters
+        vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs ); // Format the message
+        va_end ( varArgs );                                   // End of using parameters
 
         ws.textAll ( sbuf );
     }
@@ -377,14 +375,15 @@ void setup ( void )
 
     ets_install_putc1 ( ( void * ) &_u0_putc );
     system_set_os_print ( 1 );
-//  system_update_cpu_freq ( 160 );                                             // Set CPU to 80/160 MHz
+    // // Set CPU to 80/160 MHz
+    // system_update_cpu_freq ( 160 );
 
-    //Serial.begin ( 921600 );                                                // For debug
+    //Serial.begin ( 921600 );
     Serial.begin ( 9600 );
     Serial.println();
 
-    pinMode ( LED_BUILTIN, OUTPUT );                                        // initialize onboard LED as output
-    digitalWrite ( LED_BUILTIN, HIGH );                                     // Turn the LED off by making the voltage HIGH
+    pinMode ( LED_BUILTIN, OUTPUT );    // initialize onboard LED as output
+    digitalWrite ( LED_BUILTIN, HIGH ); // Turn the LED off by making the voltage HIGH
 
     // Startup Banner
     dbg_printf (
@@ -469,7 +468,8 @@ int setupAP ( int chan_selected )
 {
     struct softap_config config;
 
-    wifi_softap_get_config ( &config ); // Get config first.
+    // Get config first.
+    wifi_softap_get_config ( &config );
 
     if ( chan_selected == 0 )
     {
@@ -514,24 +514,28 @@ void setupEEPROM()
 
 void setupSPIFFS()
 {
-    FSInfo fs_info;                                                         // Info about SPIFFS
-    Dir dir;                                                                // Directory struct for SPIFFS
-    File f;                                                                 // Filehandle
-    String filename;                                                        // Name of file found in SPIFFS
+    FSInfo fs_info;  // Info about SPIFFS
+    Dir dir;         // Directory struct for SPIFFS
+    File f;          // Filehandle
+    String filename; // Name of file found in SPIFFS
 
-    SPIFFS.begin();                                                         // Enable file system
+    // Enable file system
+    SPIFFS.begin();
 
     // Show some info about the SPIFFS
     uint16_t cnt = 0;
     SPIFFS.info ( fs_info );
     dbg_printf ( "SPIFFS Files\nName                           -      Size" );
-    dir = SPIFFS.openDir ( "/" );                                           // Show files in FS
+    // Show files in FS
+    dir = SPIFFS.openDir ( "/" );
 
-    while ( dir.next() )                                                    // All files
+    // All files
+    while ( dir.next() )
     {
         f = dir.openFile ( "r" );
         filename = dir.fileName();
-        dbg_printf ( "%-30s - %9s",                                     // Show name and size
+        // Show name and size
+        dbg_printf ( "%-30s - %9s",
                      filename.c_str(),
                      formatBytes ( f.size() ).c_str()
                    );
@@ -574,8 +578,8 @@ void setupHTTPServer()
 
     // Handle requests
     httpd.on ( "/generate_204", onRequest );  //Android captive portal. Maybe not needed. Might be handled by notFound handler.
-    httpd.on ( "/fwlink", onRequest );  //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
-    httpd.on ( "/hotspot-detect.html", onRequest ); // Apple captive portal. Maybe not needed. Might be handled by notFound handler.
+    httpd.on ( "/fwlink", onRequest ); //Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+    httpd.on ( "/hotspot-detect.html", onRequest ); //Apple captive portal. Maybe not needed. Might be handled by notFound handler.
     httpd.onNotFound ( onRequest );
 
     // HTTP basic authentication
@@ -658,10 +662,13 @@ void setupOTAServer()
     // OTA callbacks
     ArduinoOTA.onStart ( []()
     {
-        SPIFFS.end();                                                   // Clean SPIFFS
+        // Clean SPIFFS
+        SPIFFS.end();
 
-        ws.enable ( false );                                            // Disable client connections
-        dbg_printf ( "OTA Update Started" );                            // Let connected clients know what's going on
+        // Disable client connections
+        ws.enable ( false );
+        // Let connected clients know what's going on
+        dbg_printf ( "OTA Update Started" );
     } );
     ArduinoOTA.onEnd ( []()
     {
@@ -669,7 +676,8 @@ void setupOTAServer()
 
         if ( ws.count() )
         {
-            ws.closeAll();                                          // Close connected clients
+            // Close connected clients
+            ws.closeAll();
             delay ( 1000 );
         }
     } );
@@ -964,12 +972,10 @@ String getEEPROM()
 bool disconnectStationByIP ( IPAddress station_ip )
 {
     // Do ARP Query to get MAC address of station_ip
-
 }
 
 bool disconnectStationByMAC ( uint8_t *station_mac )
 {
-
 }
 
 //***************************************************************************
@@ -1073,7 +1079,8 @@ void wifi_handle_event_cb ( System_Event_t *evt )
 //***************************************************************************
 void onRequest ( AsyncWebServerRequest *request )
 {
-    digitalWrite ( LED_BUILTIN, LOW );                                      // Turn the LED on by making the voltage LOW
+    // Turn the LED on by making the voltage LOW
+    digitalWrite ( LED_BUILTIN, LOW );
 
     IPAddress remoteIP = request->client()->remoteIP();
     dbg_printf (
@@ -1112,8 +1119,8 @@ void onRequest ( AsyncWebServerRequest *request )
         }
         else
         {
-            response = request->beginResponse ( SPIFFS, path );                         // Okay, send the file
-
+            // Okay, send the file
+            response = request->beginResponse ( SPIFFS, path );
         }
 
         response->addHeader ( "Cache-Control", "no-cache, no-store, must-revalidate" );
@@ -1124,7 +1131,8 @@ void onRequest ( AsyncWebServerRequest *request )
         request->send ( response );
     }
 
-    digitalWrite ( LED_BUILTIN, HIGH );                                     // Turn the LED off by making the voltage HIGH
+    // Turn the LED off by making the voltage HIGH
+    digitalWrite ( LED_BUILTIN, HIGH );
 }
 
 
@@ -1336,14 +1344,17 @@ void execCommand ( AsyncWebSocketClient *client, char *msg )
         String filename;
 
         client->printf_P ( PSTR ( "[[b;green;]SPIFFS Files]\r\nName                           -      Size" ) );
-        Dir dir = SPIFFS.openDir ( "/" );                               // Show files in FS
+        // Show files in FS
+        Dir dir = SPIFFS.openDir ( "/" );
 
-        while ( dir.next() )                                            // All files
+        // All files
+        while ( dir.next() )
         {
             cnt++;
             File f = dir.openFile ( "r" );
             filename = dir.fileName();
-            client->printf_P ( PSTR ( "%-30s - %9s" ),              // Show name and size
+            // Show name and size
+            client->printf_P ( PSTR ( "%-30s - %9s" ),             
                                filename.c_str(),
                                formatBytes ( f.size() ).c_str()
                              );
