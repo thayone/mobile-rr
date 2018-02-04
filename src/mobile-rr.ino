@@ -115,7 +115,9 @@ Ticker timer;                        // Setup Auto Scan Timer
 
 int clients = 0;
 int rrsession;                       // Rick Roll Count Session
+int rrsessiondebug = 0;
 int rrtotal;                         // Rick Roll Count Total
+int rrtotaldebug = 0;
 char str_vcc[8];
 int chan_selected;
 
@@ -508,8 +510,14 @@ void setupHTTPServer()
 
     httpd.on ( "/trigger", HTTP_GET, [] ( AsyncWebServerRequest * request )
     {
-        rrsession++;
-        rrtotal++;
+        if(DEBUG) {
+          rrsessiondebug++;
+          rrtotaldebug++;
+        } else {
+          rrsession++;
+          rrtotal++;
+        }
+
         String remoteIP = ipToString ( request->client()->remoteIP() );
 
         request->send ( 200, "text/html", String ( rrsession ) );
