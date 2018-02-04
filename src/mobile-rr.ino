@@ -85,7 +85,6 @@ char ssid[]                 = "FREE Highspeed WiFi";
 int channel                 = 0;
 char username[]             = "admin";
 char password[]             = "";
-bool DEBUG                  = 1;
 bool SILENT                 = 0;
 int interval                = 30; // 30 Minutes
 
@@ -686,7 +685,6 @@ String getApplicationSettings()
     root["interval"] = ( interval );
     root["username"] = username;
     root["password"] = password;
-    root["debug"] = DEBUG;
     root["silent"] = SILENT;
     root["rrsession"] = rrsession;
     root["rrtotal"] = rrtotal;
@@ -734,7 +732,6 @@ void eepromLoad()
         sprintf ( username, "%s", root["username"].as<char*>() );
         sprintf ( password, "%s", root["password"].as<char*>() );
 
-        DEBUG = root["debug"];
         SILENT = root["silent"];
         rrtotal = root["rrtotal"];
 
@@ -765,7 +762,6 @@ void eepromSave()
     root["interval"] = interval;
     root["username"] = username;
     root["password"] = password;
-    root["debug"] = DEBUG;
     root["silent"] = SILENT;
     root["rrtotal"] = rrtotal;
 
