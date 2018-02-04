@@ -93,6 +93,7 @@ char username[]             = "admin";
 char password[]             = "";
 bool SILENT                 = 0;
 int interval                = 30; // 30 Minutes
+bool READY                  = false;
 
 #define CLIENT_NONE     0
 #define CLIENT_ACTIVE   1
@@ -209,26 +210,43 @@ void drawHead(int x, int y)
   display.drawPixel(x+4,y+2, WHITE);
 }
 
+void drawBooting()
+{
+  drawHead((2)*8,42);
+  drawHead((7)*8,42);
+
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0,10);
+  display.setTextWrap(false);
+  display.println("BOOTING...");
+}
+
 void redrawDisplay()
 {
   display.clearDisplay();
-  if(DEBUG) {
-    drawHeader("@!DEBUG!@");
-    drawNumber(0,15,rrtotaldebug,"total");
-    drawNumber(0,28,rrsessiondebug,"today");
-  } else {
-    drawHeader("Rickrolls");
-    drawNumber(0,15,rrtotal,"total");
-    drawNumber(0,28,rrsession,"today");
-  }
 
-  // Draw number of heads based on the number of clients connected
-  int _clients = clients;
-  if (_clients>8) {
-    _clients = 8;
-  }
-  for (size_t i = 1; i <= _clients; i++) {
-    drawHead((i-1)*8,42);
+  if(READY) {
+    if(DEBUG) {
+      drawHeader("@!DEBUG!@");
+      drawNumber(0,15,rrtotaldebug,"total");
+      drawNumber(0,28,rrsessiondebug,"today");
+    } else {
+      drawHeader("Rickrolls");
+      drawNumber(0,15,rrtotal,"total");
+      drawNumber(0,28,rrsession,"today");
+    }
+
+    // Draw number of heads based on the number of clients connected
+    int _clients = clients;
+    if (_clients>8) {
+      _clients = 8;
+    }
+    for (size_t i = 1; i <= _clients; i++) {
+      drawHead((i-1)*8,42);
+    }
+  } else {
+    drawBooting();
   }
 
   display.display();
@@ -313,6 +331,9 @@ void setup ( void )
     Serial.begin ( 9600 );
     Serial.println();
 
+    // Setup display
+    setupDisplay();
+
     pinMode ( LED_BUILTIN, OUTPUT );    // initialize onboard LED as output
     digitalWrite ( LED_BUILTIN, HIGH ); // Turn the LED off by making the voltage HIGH
     // initialize the pushbutton pin as an input:
@@ -327,9 +348,6 @@ void setup ( void )
 
     // Load EEPROM Settings
     setupEEPROM();
-
-    // Setup display
-    setupDisplay();
 
     // Setup Access Point
     wifi_set_phy_mode ( PHY_MODE_11B );
@@ -395,6 +413,8 @@ void setup ( void )
     wifi_set_event_handler_cb ( wifi_handle_event_cb );
 
     dbg_printf ( "\nReady!\n--------------------" );
+    READY = true;
+    state = statemachine::redraw_display;
 }
 
 int setupAP ( int chan_selected )
