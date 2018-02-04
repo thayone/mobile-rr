@@ -213,7 +213,7 @@ void redrawDisplay()
 {
   display.clearDisplay();
   if(DEBUG) {
-    drawHeader("!!DEBUG!!");
+    drawHeader("@!DEBUG!@");
     drawNumber(0,15,rrtotaldebug,"total");
     drawNumber(0,28,rrsessiondebug,"today");
   } else {
