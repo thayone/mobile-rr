@@ -63,6 +63,10 @@ ADC_MODE ( ADC_VCC );
 #define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
 
+const int buttonPinA = 0;
+const int buttonPinB = 2;
+int buttonStateA = 0;
+int buttonStateB = 0;
 bool DEBUG = false;
 
 // Use the internal hardware buffer
@@ -311,6 +315,9 @@ void setup ( void )
 
     pinMode ( LED_BUILTIN, OUTPUT );    // initialize onboard LED as output
     digitalWrite ( LED_BUILTIN, HIGH ); // Turn the LED off by making the voltage HIGH
+    // initialize the pushbutton pin as an input:
+    pinMode(buttonPinA, INPUT);
+    pinMode(buttonPinB, INPUT);
 
     // Startup Banner
     dbg_printf (
@@ -846,6 +853,10 @@ void loop ( void )
     dnsd.processNextRequest();
     ArduinoOTA.handle(); // Handle remote Wifi Updates
 
+    buttonStateA = digitalRead(buttonPinA);
+    buttonStateB = digitalRead(buttonPinB);
+
+    if(buttonStateA == LOW || buttonStateB == LOW) {
       if(DEBUG) {
         DEBUG = false;
         dbg_printf("Setting DEBUG=false");
@@ -855,6 +866,9 @@ void loop ( void )
         dbg_printf("Setting DEBUG=true");
         state = statemachine::redraw_display;
       }
+      delay(200);
+    }
+
     switch ( state )
     {
         case statemachine::scan_wifi:
