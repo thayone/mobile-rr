@@ -63,6 +63,8 @@ ADC_MODE ( ADC_VCC );
 #define OLED_RESET 0  // GPIO0
 Adafruit_SSD1306 display(OLED_RESET);
 
+bool DEBUG = false;
+
 // Use the internal hardware buffer
 static void _u0_putc ( char c )
 {
@@ -204,9 +206,15 @@ void drawHead(int x, int y)
 void redrawDisplay()
 {
   display.clearDisplay();
-  drawHeader("Rickrolls");
-  drawNumber(0,15,rrtotal,"total");
-  drawNumber(0,28,rrsession,"today");
+  if(DEBUG) {
+    drawHeader("!!DEBUG!!");
+    drawNumber(0,15,rrtotaldebug,"total");
+    drawNumber(0,28,rrsessiondebug,"today");
+  } else {
+    drawHeader("Rickrolls");
+    drawNumber(0,15,rrtotal,"total");
+    drawNumber(0,28,rrsession,"today");
+  }
 
   // Draw number of heads based on the number of clients connected
   int _clients = clients;
@@ -830,6 +838,15 @@ void loop ( void )
     dnsd.processNextRequest();
     ArduinoOTA.handle(); // Handle remote Wifi Updates
 
+      if(DEBUG) {
+        DEBUG = false;
+        dbg_printf("Setting DEBUG=false");
+        state = statemachine::redraw_display;
+      } else {
+        DEBUG = true;
+        dbg_printf("Setting DEBUG=true");
+        state = statemachine::redraw_display;
+      }
     switch ( state )
     {
         case statemachine::scan_wifi:
