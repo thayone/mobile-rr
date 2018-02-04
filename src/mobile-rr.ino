@@ -96,7 +96,8 @@ enum class statemachine
 {
     none,
     scan_wifi,
-    ap_change
+    ap_change,
+    redraw_display
 };
 statemachine state = statemachine::none;
 int state_int;
@@ -838,9 +839,11 @@ void loop ( void )
         case statemachine::scan_wifi:
             scanWiFi();
             break;
-
         case statemachine::ap_change:
             chan_selected = setupAP ( chan_selected );
+            break;
+        case statemachine::redraw_display:
+            redrawDisplay();
             break;
     }
 
@@ -884,7 +887,7 @@ void wifi_handle_event_cb ( System_Event_t *evt )
 
         case EVENT_SOFTAPMODE_STACONNECTED:  // 5
             clients = clients + 1;
-            redrawDisplay();
+            state = statemachine::redraw_display;
             printf ( "station connected: %02X:%02X:%02X:%02X:%02X:%02X, AID = %d\n",
                      MAC2STR ( evt->event_info.sta_connected.mac ),
                      evt->event_info.sta_connected.aid );
@@ -892,7 +895,7 @@ void wifi_handle_event_cb ( System_Event_t *evt )
 
         case EVENT_SOFTAPMODE_STADISCONNECTED:  // 6
             clients = clients - 1;
-            redrawDisplay();
+            state = statemachine::redraw_display;
             printf ( "station disconnected: %02X:%02X:%02X:%02X:%02X:%02X, AID = %d\n",
                      MAC2STR ( evt->event_info.sta_disconnected.mac ),
                      evt->event_info.sta_disconnected.aid );
