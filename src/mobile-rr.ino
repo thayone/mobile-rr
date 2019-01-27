@@ -165,7 +165,7 @@ void drawHeader(String title)
 {
   display.fillRoundRect(0,0,64,11,0,WHITE);
 
-  for (size_t i = 0; i < 64; i = i+2) {
+  for (size_t i = 0; i < 128; i = i+2) {
     display.drawPixel(i,12, WHITE);
   }
 
@@ -190,7 +190,7 @@ void drawNumber(int x, int y, int number, String text)
 
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.setCursor(5+6*number_len+radius*2,y+radius);
+  display.setCursor(x + 5+6*number_len+radius*2,y+radius);
   display.setTextWrap(false);
   display.println(text);
 }
@@ -230,11 +230,11 @@ void redrawDisplay()
     if(DEBUG) {
       drawHeader("@!DEBUG!@");
       drawNumber(0,15,rrtotaldebug,"total");
-      drawNumber(0,28,rrsessiondebug,"today");
+      drawNumber(64,15,rrsessiondebug,"session");
     } else {
       drawHeader("Rickrolls");
       drawNumber(0,15,rrtotal,"total");
-      drawNumber(0,28,rrsession,"today");
+      drawNumber(64,15,rrsession,"session");
     }
 
     // Draw number of heads based on the number of clients connected
@@ -242,9 +242,19 @@ void redrawDisplay()
     if (_clients>8) {
       _clients = 8;
     }
+
+    // Draw two rows of heads (4 on each row)
+   int j = 0;
     for (size_t i = 1; i <= _clients; i++) {
-      drawHead((i-1)*8,42);
+
+        if (i <= 4) {
+            drawHead((i-1)*8 + 1 + 70, 0);
+        } else {
+            drawHead(j*8 + 1 + 70, 6);
+            j++;
+        }
     }
+
   } else {
     drawBooting();
   }
@@ -383,6 +393,35 @@ void setup ( void )
     dbg_printf ( "getFlashChipSize:   %s", formatBytes ( ESP.getFlashChipRealSize() ).c_str() );
     dbg_printf ( "getFlashChipSpeed:  %d MHz\n", int ( ESP.getFlashChipSpeed() / 1000000 ) );
 
+
+
+
+    struct	rst_info	*rtc_info	=	system_get_rst_info();
+
+dbg_printf("reset	reason:	%x\n",	rtc_info->reason);
+
+	 if	(rtc_info->reason	==	REASON_WDT_RST	||
+
+	 	 rtc_info->reason	==	REASON_EXCEPTION_RST	||
+
+	 	 rtc_info->reason	==	REASON_SOFT_WDT_RST)	{
+
+	 	 if	(rtc_info->reason	==	REASON_EXCEPTION_RST)	{
+
+	 	 	 dbg_printf("Fatal	exception	(%d):\n",	rtc_info->exccause);
+
+	 	 }
+
+	 	 dbg_printf("epc1=0x%08x,	epc2=0x%08x,	epc3=0x%08x,	excvaddr=0x%08x,depc=0x%08x\n",
+
+	 	 	 	 rtc_info->epc1,	rtc_info->epc2,	rtc_info->epc3,	rtc_info->excvaddr,	rtc_info->depc);
+
+//The	address	of	the	last	crash	is	printed,	which	is	used	to	debug	garbled	output.
+	 }
+
+
+
+
     // Start File System
     setupSPIFFS();
     setupDNSServer();
@@ -398,6 +437,8 @@ void setup ( void )
     {
         dbg_printf ( ">>>>> mDNS Domain: %s", mdnsDomain );
     }
+
+    dbg_printf("mDnshere");
 
     setupHTTPServer();
     setupOTAServer();

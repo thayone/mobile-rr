@@ -119,6 +119,7 @@ String DNSServer::getDomainName ( bool removeWWWPrefix )
 
 void DNSServer::replyWithIP()
 {
+    if (_buffer == NULL) return;
     _dnsHeader->QR = DNS_QR_RESPONSE;
     _dnsHeader->ANCount = _dnsHeader->QDCount;
     _dnsHeader->QDCount = _dnsHeader->QDCount;
