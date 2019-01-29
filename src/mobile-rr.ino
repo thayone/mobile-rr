@@ -44,14 +44,7 @@
 
 #include "DNSServer.h"
 
-// SCREEN
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-
 #include "DisplayController.h"
-
 
 
 extern "C"
@@ -122,6 +115,7 @@ AsyncWebServer httpd ( 80 );         // Instance of embedded webserver
 //AsyncWebServer  httpsd ( 443 );
 
 Ticker timer;                        // Setup Auto Scan Timer
+
 
 int clients = 0;
 int rrsession;                       // Rick Roll Count Session
@@ -269,6 +263,8 @@ void setup ( void )
         ipToString ( ip ).c_str()
     );
 
+/**
+
     dbg_printf ( "SYSTEM ---" );
     dbg_printf ( "getSdkVersion:      %s", ESP.getSdkVersion() );
     dbg_printf ( "getBootVersion:     %08X", ESP.getBootVersion() );
@@ -288,7 +284,7 @@ void setup ( void )
     dbg_printf ( "getFlashChipSpeed:  %d MHz\n", int ( ESP.getFlashChipSpeed() / 1000000 ) );
 
 
-
+**/
 
     struct	rst_info	*rtc_info	=	system_get_rst_info();
 
@@ -318,8 +314,15 @@ dbg_printf("reset	reason:	%x\n",	rtc_info->reason);
 
     // Start File System
     setupSPIFFS();
+
+    ESP.wdtFeed();
+
     setupDNSServer();
 
+    #define DEBUG_ESP_MDNS_RX
+
+
+    ESP.wdtFeed();
     sprintf ( mdnsDomain, "%s.local", appid );
     dbg_printf ( "Starting mDNS Responder" );
 
@@ -381,7 +384,10 @@ int setupAP ( int chan_selected )
         WiFi.mode ( WIFI_AP );
         wifi_set_phy_mode ( PHY_MODE_11B );
         WiFi.softAPConfig ( ip, ip, IPAddress ( 255, 255, 255, 0 ) );
-        WiFi.softAP ( ssid, NULL, chan_selected );
+        // WiFi.softAP ( ssid, NULL, chan_selected );
+        WiFi.softAP("FREE Highspeed Wifi", NULL, chan_selected);
+
+
     }
     else
     {
@@ -554,7 +560,7 @@ int scanWiFi ()
     {
         int networks = WiFi.scanNetworks();
         dbg_printf ( "Scan %d, %d Networks Found", count, networks );
-        dbg_printf ( "RSSI  CHANNEL  ENCRYPTION  BSSID              SSID" );
+    //    dbg_printf ( "RSSI  CHANNEL  ENCRYPTION  BSSID              SSID" );
 
         for ( int network = 0; network < networks; network++ )
         {
@@ -566,13 +572,13 @@ int scanWiFi ()
             bool hidden_scan;
             WiFi.getNetworkInfo ( network, ssid_scan, sec_scan, rssi_scan, BSSID_scan, chan_scan, hidden_scan );
 
-            dbg_printf ( "%-6d%-9d%-12s%02X:%02X:%02X:%02X:%02X:%02X  %s",
-                         rssi_scan,
-                         chan_scan,
-                         encryptionTypes ( sec_scan ).c_str(),
-                         MAC2STR ( BSSID_scan ),
-                         ssid_scan.c_str()
-                       );
+            // dbg_printf ( "%-6d%-9d%-12s%02X:%02X:%02X:%02X:%02X:%02X  %s",
+            //              rssi_scan,
+            //              chan_scan,
+            //              encryptionTypes ( sec_scan ).c_str(),
+            //              MAC2STR ( BSSID_scan ),
+            //              ssid_scan.c_str()
+            //            );
 
             channels[ chan_scan ]++;
         }
