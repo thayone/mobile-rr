@@ -12,8 +12,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-
 #define OLED_RST 16 // GPIO 0 OLED Reset
+
+
+/**
+ * Display Controller - Deals with drawing to the OLED display if enabled
+ *
+ **/
 
  class DisplayController {
 
@@ -29,9 +34,6 @@
         void drawBooting();
         void redrawDisplay(int, int, int , bool);
         void setupDisplay();
-
-
-
 
  };
 

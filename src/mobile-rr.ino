@@ -38,13 +38,16 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <EEPROM.h>
-#include <FS.h>
+
 #include <Hash.h>
 #include <Ticker.h>
 
 #include "DNSServer.h"
 
-#include "DisplayController.h"
+#include "Display/DisplayController.h"
+#include "Spiffs/SpiffsHandler.h"
+
+#include "Helper.h"
 
 
 extern "C"
@@ -60,6 +63,7 @@ ADC_MODE ( ADC_VCC );
 // #define OLED_RESET 0  // GPIO0
 // Adafruit_SSD1306 display(OLED_RESET);
 DisplayController display;
+SpiffsHandler spiffs;
 
 const int buttonPinA = 0;
 const int buttonPinB = 2;
@@ -160,20 +164,7 @@ String encryptionTypes ( int which )
     }
 }
 
-//***************************************************************************
-//                            D B G P R I N T                               *
-//***************************************************************************
-void dbg_printf ( const char *format, ... )
-{
-    static char sbuf[1400];                               // For debug lines
-    va_list varArgs;                                      // For variable number of params
 
-    va_start ( varArgs, format );                         // Prepare parameters
-    vsnprintf ( sbuf, sizeof ( sbuf ), format, varArgs ); // Format the message
-    va_end ( varArgs );                                   // End of using parameters
-
-    Serial.println ( sbuf );
-}
 
 /** IP to String? */
 String ipToString ( IPAddress ip )
@@ -189,28 +180,7 @@ String ipToString ( IPAddress ip )
     return res;
 }
 
-//***************************************************************************
-//                    F O R M A T  B Y T E S                                *
-//***************************************************************************
-String formatBytes ( size_t bytes )
-{
-    if ( bytes < 1024 )
-    {
-        return String ( bytes ) + " B";
-    }
-    else if ( bytes < ( 1024 * 1024 ) )
-    {
-        return String ( bytes / 1024.0 ) + " KB";
-    }
-    else if ( bytes < ( 1024 * 1024 * 1024 ) )
-    {
-        return String ( bytes / 1024.0 / 1024.0 ) + " MB";
-    }
-    else
-    {
-        return String ( bytes / 1024.0 / 1024.0 / 1024.0 ) + " GB";
-    }
-}
+
 
 //***************************************************************************
 //                    S E T U P                                             *
@@ -232,8 +202,8 @@ void setup ( void )
     // Setup display
     display.setupDisplay();
 
-    pinMode ( LED_BUILTIN, OUTPUT );    // initialize onboard LED as output
-    digitalWrite ( LED_BUILTIN, HIGH ); // Turn the LED off by making the voltage HIGH
+   // pinMode ( LED_BUILTIN, OUTPUT );    // initialize onboard LED as output
+   // digitalWrite ( LED_BUILTIN, HIGH ); // Turn the LED off by making the voltage HIGH
     // initialize the pushbutton pin as an input:
     pinMode(buttonPinA, INPUT);
     pinMode(buttonPinB, INPUT);
@@ -313,7 +283,7 @@ dbg_printf("reset	reason:	%x\n",	rtc_info->reason);
 
 
     // Start File System
-    setupSPIFFS();
+    spiffs.setupSPIFFS();
 
     ESP.wdtFeed();
 
@@ -464,6 +434,7 @@ void setupDNSServer()
     //dnsd.setTTL(0);
     dnsd.start ( 53, "*", ip );
 }
+
 
 void setupHTTPServer()
 {
@@ -886,7 +857,7 @@ void wifi_handle_event_cb ( System_Event_t *evt )
             state = statemachine::redraw_display;
             printf ( "station connected: %02X:%02X:%02X:%02X:%02X:%02X, AID = %d\n",
                      MAC2STR ( evt->event_info.sta_connected.mac ),
-                     evt->event_info.sta_connected.aid );
+                     evt->event_info.sta_connected.aid );                 
             break;
 
         case EVENT_SOFTAPMODE_STADISCONNECTED:  // 6
